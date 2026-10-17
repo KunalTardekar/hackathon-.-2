@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChronosFlow — Smart AI Day & Timetable Planner</title>
+  <meta name="description" content="Intelligent timetable and day planner. Auto-schedules your tasks into free gaps, manages college routines, includes Pomodoro focus timer and ambient sounds.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="antialiased min-h-screen text-slate-100 flex flex-col">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo & Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-heading font-extrabold text-xl tracking-tight text-white">Chronos<span class="text-indigo-400">Flow</span></span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">AI PLANNER</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Intelligent Day & Timetable Optimizer</p>
+        </div>
+      </div>
+
+      <!-- Live Clock & Date Indicator -->
+      <div class="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div class="text-xs font-medium">
+          <span id="currentDateDisplay" class="text-slate-300">Saturday, Oct 17</span>
+          <span class="text-slate-600 mx-1">|</span>
+          <span id="currentTimeDisplay" class="text-indigo-300 font-mono font-semibold">07:00 AM</span>
+        </div>
+      </div>
+
+      <!-- Header Action Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- Chronotype Preference Switcher -->
+        <button id="chronotypeToggleBtn" title="Switch your peak energy curve" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-indigo-500/50 text-xs font-medium text-slate-300 flex items-center gap-1.5 transition">
+          <span id="chronotypeIcon">🌅</span>
+          <span id="chronotypeLabel" class="hidden sm:inline">Early Bird</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggleBtn" title="Toggle Light/Dark Theme" class="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition">
+          <svg id="themeIconSun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <svg id="themeIconMoon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+          </svg>
+        </button>
+
+        <!-- Smart Auto-Plan Button -->
+        <button id="openAutoPlanBtn" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+          </svg>
+          <span class="hidden sm:inline">Auto-Schedule</span>
+          <span class="sm:hidden">Auto</span>
+        </button>
+
+        <!-- Add Slot Button -->
+        <button id="openAddSlotBtn" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span>Add Slot</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI / Productivity Overview Ribbon -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Total Scheduled -->
+      <div class="glass-panel p-4 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-400">Scheduled Time</p>
+          <h3 id="statTotalHours" class="text-xl font-heading font-bold text-white">7.5 hrs</h3>
+          <p id="statSlotsCount" class="text-[11px] text-slate-500">7 active commitments</p>
+        </div>
+      </div>
+
+      <!-- Card 2: Deep Focus -->
+      <div class="glass-panel p-4 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-400">Deep Work / Study</p>
+          <h3 id="statFocusHours" class="text-xl font-heading font-bold text-white">4.5 hrs</h3>
+          <p class="text-[11px] text-purple-400 font-medium">Peak focus prioritized</p>
+        </div>
+      </div>
+
+      <!-- Card 3: Free Buffer Available -->
+      <div class="glass-panel p-4 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-400">Available Gaps</p>
+          <h3 id="statFreeHours" class="text-xl font-heading font-bold text-white">3.0 hrs</h3>
+          <p class="text-[11px] text-cyan-400 font-medium">Buffer for auto-tasks</p>
+        </div>
+      </div>
+
+      <!-- Card 4: Day Completion Score -->
+      <div class="glass-panel p-4 flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-baseline">
+            <p class="text-xs font-medium text-slate-400">Day Progress</p>
+            <span id="statProgressPercent" class="text-xs font-bold text-emerald-400">57%</span>
+          </div>
+          <h3 id="statCompletedRatio" class="text-lg font-heading font-bold text-white">4 / 7 done</h3>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full mt-1 overflow-hidden">
+            <div id="statProgressBar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-full rounded-full transition-all duration-500" style="width: 57%;"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Conflict Warning Alert (Shown if overlapping slots exist) -->
+    <div id="conflictAlertBanner" class="hidden p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300">
+      <svg class="w-5 h-5 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+      </svg>
+      <div class="flex-1 text-xs">
+        <strong class="font-bold">Schedule Overlap Detected:</strong>
+        <span id="conflictAlertText" class="ml-1">You have conflicting commitments on this day.</span>
+      </div>
+      <button id="dismissConflictBtn" class="text-xs text-rose-400 hover:text-white font-medium underline">Dismiss</button>
+    </div>
+
+    <!-- MAIN TWO COLUMN WORKSPACE -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT SECTION (8 COLS): TIMETABLE & TIMELINE -->
+      <section class="lg:col-span-8 space-y-4">
+        
+        <!-- Day Selector & View Switcher Bar -->
+        <div class="glass-panel p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+          
+          <!-- Days of Week Pills -->
+          <div class="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0" id="dayTabsContainer">
+            <button data-day="Mon" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Mon</button>
+            <button data-day="Tue" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Tue</button>
+            <button data-day="Wed" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Wed</button>
+            <button data-day="Thu" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Thu</button>
+            <button data-day="Fri" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Fri</button>
+            <button data-day="Sat" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition active bg-indigo-600 text-white">Sat</button>
+            <button data-day="Sun" class="day-tab px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">Sun</button>
+          </div>
+
+          <!-- View Mode Toggle Buttons -->
+          <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800 shrink-0">
+            <button id="viewTimelineBtn" class="px-2.5 py-1 rounded text-xs font-medium text-white bg-indigo-600 transition flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+              </svg>
+              <span>Timeline</span>
+            </button>
+            <button id="viewMatrixBtn" class="px-2.5 py-1 rounded text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 10h16M10 4v16"></path>
+              </svg>
+              <span>Week Matrix</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Filter & Search Strip -->
+        <div class="glass-panel p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          
+          <!-- Category Filters -->
+          <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0" id="categoryFilterContainer">
+            <button data-category="ALL" class="cat-filter-btn px-2.5 py-1 rounded-md bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-medium">All</button>
+            <button data-category="ACADEMIC" class="cat-filter-btn px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-400 hover:text-white border border-transparent font-medium">📚 Lectures</button>
+            <button data-category="STUDY" class="cat-filter-btn px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-400 hover:text-white border border-transparent font-medium">⚡ Deep Work</button>
+            <button data-category="HEALTH" class="cat-filter-btn px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-400 hover:text-white border border-transparent font-medium">💪 Health/Gym</button>
+            <button data-category="ROUTINE" class="cat-filter-btn px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-400 hover:text-white border border-transparent font-medium">☕ Routine/Break</button>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-64">
+            <svg class="w-4 h-4 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input type="text" id="slotSearchInput" placeholder="Search tasks, subjects, tags..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+          </div>
+
+        </div>
+
+        <!-- ================= VIEW 1: TIMELINE CONTAINER ================= -->
+        <div id="timelineViewContainer" class="glass-panel p-4 sm:p-6 min-h-[480px]">
+          
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+            <div>
+              <h2 id="currentDayHeader" class="text-base font-heading font-bold text-white flex items-center gap-2">
+                <span>Saturday's Schedule</span>
+                <span id="activeSlotCountBadge" class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">7 slots</span>
+              </h2>
+              <p class="text-xs text-slate-400">Synchronized with your peak focus intervals</p>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button id="quickFillGapsBtn" title="Auto fill all free periods today with priority tasks" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-500/20 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                <span>Fill Free Gaps</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Slots List Container -->
+          <div id="slotsList" class="space-y-3 relative">
+            <!-- Dynamic Slots rendered here via JavaScript -->
+          </div>
+
+          <!-- Empty State (Shown if no slots) -->
+          <div id="emptyStateContainer" class="hidden text-center py-16 px-4">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-base font-semibold text-slate-200">No scheduled commitments for this day</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Add a college lecture, workout routine, or click auto-schedule to optimize your goals.</p>
+            <div class="mt-4 flex justify-center gap-3">
+              <button onclick="document.getElementById('openAddSlotBtn').click()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-md transition">
+                + Add Custom Slot
+              </button>
+              <button id="loadDefaultDemoBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 transition">
+                Load Demo Timetable
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= VIEW 2: WEEKLY MATRIX (Hidden by default) ================= -->
+        <div id="weeklyMatrixContainer" class="glass-panel p-4 hidden">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+            <h3 class="text-sm font-heading font-bold text-white">Full Weekly Timetable Matrix</h3>
+            <span class="text-xs text-slate-400">Click any cell to edit or view details</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 font-semibold">
+                  <th class="py-2 px-2 text-center w-16">Time</th>
+                  <th class="py-2 px-2 text-center">Mon</th>
+                  <th class="py-2 px-2 text-center">Tue</th>
+                  <th class="py-2 px-2 text-center">Wed</th>
+                  <th class="py-2 px-2 text-center">Thu</th>
+                  <th class="py-2 px-2 text-center">Fri</th>
+                  <th class="py-2 px-2 text-center">Sat</th>
+                  <th class="py-2 px-2 text-center">Sun</th>
+                </tr>
+              </thead>
+              <tbody id="matrixTableBody" class="divide-y divide-slate-800/60 font-medium">
+                <!-- Dynamically rendered weekly matrix -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT SECTION (4 COLS): PRODUCTIVITY HUB & AI WIDGETS -->
+      <aside class="lg:col-span-4 space-y-4">
+        
+        <!-- ================= WIDGET 1: AI SMART AUTO-SCHEDULER ================= -->
+        <div class="glass-panel p-5 border-indigo-500/20 shadow-indigo-500/5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                </svg>
+              </span>
+              <h3 class="text-sm font-heading font-bold text-white">AI Quick-Fit Task</h3>
+            </div>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/30">Auto Gaps</span>
+          </div>
+
+          <p class="text-xs text-slate-400 mb-3">Have a task or revision goal? The AI engine finds your free buffer windows and schedules it instantly.</p>
+
+          <form id="quickFitTaskForm" class="space-y-3">
+            <div>
+              <input type="text" id="quickTaskTitle" placeholder="e.g. Study Operating Systems" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Duration</label>
+                <select id="quickTaskDuration" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60" selected>1 hour</option>
+                  <option value="90">1.5 hours</option>
+                  <option value="120">2 hours</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[11px] text-slate-400 mb-1">Priority</label>
+                <select id="quickTaskPriority" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                  <option value="HIGH">High Priority</option>
+                  <option value="MEDIUM" selected>Medium</option>
+                  <option value="LOW">Low / Relaxed</option>
+                  <option value="URGENT">🚨 Urgent</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Energy Required</label>
+              <select id="quickTaskEnergy" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                <option value="DEEP_WORK">🧠 Deep Work (Needs Focus)</option>
+                <option value="CREATIVE">💡 Creative & Problem Solving</option>
+                <option value="LIGHT">☕ Light / Administrative</option>
+              </select>
+            </div>
+
+            <button type="submit" class="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 transition">
+              <svg class="w-3.5 h-3.5 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+              </svg>
+              <span>Auto-Slot into Today's Timetable</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- ================= WIDGET 2: INTEGRATED POMODORO FOCUS TIMER ================= -->
+        <div class="glass-panel p-5 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-rose-500/20 text-rose-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </span>
+              <h3 class="text-sm font-heading font-bold text-white">Focus Room</h3>
+            </div>
+            <div class="flex items-center gap-1">
+              <button id="pomoPreset25" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">25m</button>
+              <button id="pomoPreset50" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400 hover:text-white">50m</button>
+              <button id="pomoPresetBreak" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400 hover:text-white">5m</button>
+            </div>
+          </div>
+
+          <!-- Circular Timer Graphic -->
+          <div class="relative w-44 h-44 mx-auto my-2 flex items-center justify-center">
+            <svg class="w-full h-full timer-circle-svg" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ec4899" />
+                  <stop offset="50%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#6366f1" />
+                </linearGradient>
+              </defs>
+              <circle class="timer-circle-bg" cx="60" cy="60" r="50" stroke-width="6" fill="transparent"></circle>
+              <circle id="timerProgressCircle" class="timer-circle-bar" cx="60" cy="60" r="50" stroke-width="6" fill="transparent" stroke-dasharray="314.159" stroke-dashoffset="0"></circle>
+            </svg>
+            
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span id="pomoDisplay" class="text-3xl font-heading font-extrabold text-white tracking-wider font-mono">25:00</span>
+              <span id="pomoTaskLabel" class="text-[11px] text-slate-400 font-medium truncate max-w-[130px] px-2 mt-0.5">Ready to focus</span>
+            </div>
+          </div>
+
+          <!-- Timer Controls -->
+          <div class="flex items-center justify-center gap-3 mt-3">
+            <button id="pomoToggleBtn" class="px-5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition flex items-center gap-1.5">
+              <svg id="pomoPlayIcon" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+              </svg>
+              <svg id="pomoPauseIcon" class="w-3.5 h-3.5 hidden" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+              </svg>
+              <span id="pomoToggleText">Start Session</span>
+            </button>
+            <button id="pomoResetBtn" title="Reset timer" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Ambient Sound Synthesizer (Built with Web Audio API - 100% offline!) -->
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+            <span class="text-slate-400 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+              </svg>
+              <span>Ambient Sound:</span>
+            </span>
+            <div class="flex items-center gap-1.5">
+              <select id="ambientSoundSelect" class="bg-slate-900 border border-slate-800 rounded px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500">
+                <option value="none">Mute</option>
+                <option value="rain">🌧️ Gentle Rain</option>
+                <option value="whitenoise">💨 White Noise</option>
+                <option value="binaural">🧘 Alpha Waves (432Hz)</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= WIDGET 3: TIME & ENERGY ANALYTICS ================= -->
+        <div class="glass-panel p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-heading font-bold text-white flex items-center gap-2">
+              <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+              </svg>
+              <span>Daily Balance Distribution</span>
+            </h3>
+            <span class="text-[11px] text-slate-500">Weekly Target</span>
+          </div>
+
+          <!-- Dynamic SVG Category Proportion Bar -->
+          <div class="space-y-3">
+            <div class="w-full h-3 rounded-full bg-slate-800 flex overflow-hidden" id="analyticsBar">
+              <div id="barAcademic" class="bg-indigo-500 transition-all duration-500" style="width: 40%;" title="Lectures"></div>
+              <div id="barStudy" class="bg-purple-500 transition-all duration-500" style="width: 30%;" title="Deep Work"></div>
+              <div id="barHealth" class="bg-emerald-500 transition-all duration-500" style="width: 15%;" title="Health"></div>
+              <div id="barRoutine" class="bg-amber-500 transition-all duration-500" style="width: 15%;" title="Routine"></div>
+            </div>
+
+            <!-- Legend with dynamic counts -->
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0"></span>
+                <span class="truncate">Lectures:</span>
+                <span id="legendAcademic" class="ml-auto font-bold font-mono">3.0h</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
+                <span class="truncate">Deep Work:</span>
+                <span id="legendStudy" class="ml-auto font-bold font-mono">2.5h</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span class="truncate">Health/Gym:</span>
+                <span id="legendHealth" class="ml-auto font-bold font-mono">1.0h</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                <span class="truncate">Routine:</span>
+                <span id="legendRoutine" class="ml-auto font-bold font-mono">1.0h</span>
+              </div>
+            </div>
+
+            <!-- Peak Energy Alignment Insight -->
+            <div class="mt-3 p-2.5 rounded-lg bg-indigo-950/40 border border-indigo-500/20 text-xs">
+              <div class="flex items-center gap-1.5 text-indigo-300 font-semibold mb-1">
+                <span>⚡ Energy Score:</span>
+                <span id="energyScoreLabel" class="text-emerald-400 font-bold">92% Optimal</span>
+              </div>
+              <p id="energyInsightText" class="text-slate-400 text-[11px] leading-relaxed">
+                High-intensity study sessions are matched with your morning cognitive peaks.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ================= WIDGET 4: EXPORT & TOOLS ================= -->
+        <div class="glass-panel p-4 space-y-2">
+          <p class="text-xs font-semibold text-slate-400 mb-2">Export & Utilities</p>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button id="exportIcalBtn" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium flex items-center justify-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <span>Export .ICS</span>
+            </button>
+            <button id="printPlanBtn" class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-medium flex items-center justify-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+              </svg>
+              <span>Print Schedule</span>
+            </button>
+          </div>
+          <div class="pt-2 flex justify-between items-center text-[11px] text-slate-500">
+            <button id="resetDemoBtn" class="hover:text-indigo-400 underline transition">Reset to Demo College Schedule</button>
+            <button id="clearAllBtn" class="hover:text-rose-400 underline transition">Clear All Data</button>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL: ADD / EDIT TIMETABLE SLOT ================= -->
+  <div id="slotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-lg p-6 relative border-indigo-500/30 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <h3 id="modalTitle" class="text-base font-heading font-bold text-white">Add Schedule Commitment</h3>
+        <button id="closeSlotModalBtn" class="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <form id="slotForm" class="space-y-4 text-xs">
+        <input type="hidden" id="editSlotId" value="">
+
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Title / Subject *</label>
+          <input type="text" id="slotTitleInput" placeholder="e.g. Data Structures Lecture, Web Dev Sprint" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Day of Week *</label>
+            <select id="slotDayInput" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="Mon">Monday</option>
+              <option value="Tue">Tuesday</option>
+              <option value="Wed">Wednesday</option>
+              <option value="Thu">Thursday</option>
+              <option value="Fri">Friday</option>
+              <option value="Sat" selected>Saturday</option>
+              <option value="Sun">Sunday</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Category *</label>
+            <select id="slotCategoryInput" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="ACADEMIC">📚 Academic / College Lecture</option>
+              <option value="STUDY">⚡ Deep Work / Self Study</option>
+              <option value="HEALTH">💪 Workout / Physical Health</option>
+              <option value="ROUTINE">☕ Routine / Break / Meals</option>
+              <option value="PERSONAL">🌟 Personal Project</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Start Time *</label>
+            <input type="time" id="slotStartTimeInput" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">End Time *</label>
+            <input type="time" id="slotEndTimeInput" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Priority</label>
+            <select id="slotPriorityInput" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="NORMAL" selected>Normal</option>
+              <option value="HIGH">High Priority</option>
+              <option value="URGENT">🚨 Urgent / Exam</option>
+              <option value="OPTIONAL">Optional / Leisure</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-medium text-slate-300 mb-1">Location / Room (Optional)</label>
+            <input type="text" id="slotLocationInput" placeholder="e.g. Lab 3, Library, Room 402" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-300 mb-1">Notes / Checklist (Optional)</label>
+          <textarea id="slotNotesInput" rows="2" placeholder="e.g. Bring formula sheet, revise chapter 4..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+          <button type="button" id="cancelSlotBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-md shadow-indigo-600/30 transition">
+            Save Commitment
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: AUTO-PLAN ENGINE WIZARD ================= -->
+  <div id="autoPlanModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
+    <div class="glass-panel w-full max-w-lg p-6 relative border-purple-500/30">
+      
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+          <h3 class="text-base font-heading font-bold text-white">AI Timetable & Day Optimizer</h3>
+        </div>
+        <button id="closeAutoPlanModalBtn" class="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <p class="text-slate-300 leading-relaxed">
+          The smart optimization engine analyzes your fixed timetable (lectures, labs) and intelligently fills vacant buffer intervals with your priority academic goals, study routines, and health breaks.
+        </p>
+
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <p class="font-semibold text-slate-200">Current Day Analysis for <span id="autoPlanDayText" class="text-indigo-400">Saturday</span>:</p>
+          <div class="grid grid-cols-2 gap-2 text-slate-400 text-[11px]">
+            <div>• Free Available Windows: <span id="autoPlanFreeWindowsCount" class="text-emerald-400 font-bold">2 gaps (3.0 hrs)</span></div>
+            <div>• Peak Energy Window: <span class="text-purple-400 font-bold">09:00 - 12:00</span></div>
+            <div>• Fixed Commitments: <span id="autoPlanFixedCount" class="text-slate-200 font-bold">4 slots</span></div>
+            <div>• Schedule Balance: <span class="text-cyan-400 font-bold">Optimal</span></div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block font-medium text-slate-300">Choose Auto-Plan Strategy:</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="p-2.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 cursor-pointer flex flex-col gap-1">
+              <input type="radio" name="planStrategy" value="balanced" checked class="text-indigo-600">
+              <span class="font-bold text-slate-200">⚖️ Balanced Flow</span>
+              <span class="text-[10px] text-slate-400">Distributes study, homework, and recovery evenly.</span>
+            </label>
+            <label class="p-2.5 rounded-lg border border-slate-800 bg-slate-900 cursor-pointer flex flex-col gap-1">
+              <input type="radio" name="planStrategy" value="examSprint" class="text-indigo-600">
+              <span class="font-bold text-slate-200">🔥 Exam Sprint</span>
+              <span class="text-[10px] text-slate-400">Packs maximum deep study intervals into every free slot.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2 border-t border-slate-800">
+          <button type="button" id="cancelAutoPlanBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">
+            Close
+          </button>
+          <button type="button" id="executeAutoPlanBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold shadow-md shadow-purple-600/30 transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+            </svg>
+            <span>Run Auto-Planner Now</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= TOAST NOTIFICATION CONTAINER ================= -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto border-t border-slate-800/80 bg-slate-950/40 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>ChronosFlow — Built for Webathon 2026. Standalone client-side scheduler.</p>
+      <div class="flex items-center gap-4">
+        <span>Runs 100% offline</span>
+        <span>•</span>
+        <span>No server required</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Script -->
+  <script src="./app.js"></script>
+</body>
+</html>
